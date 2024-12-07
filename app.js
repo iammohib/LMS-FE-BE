@@ -5,8 +5,16 @@ import { config } from "dotenv";
 import cors from "cors";
 import morgan from "morgan";
 import errorMiddleware from "./middlewares/error.middleware.js";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const app = express();
+
+// Get the current file path and directory (ESM doesn't support __dirname directly)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// Serve static files from the "public" directory
+app.use(express.static(path.join(__dirname, "public")));
 
 // Middlewares
 // Built-In
