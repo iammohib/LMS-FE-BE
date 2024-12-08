@@ -1,17 +1,18 @@
-import crypto from 'crypto';
-import fs from 'fs/promises';
+import crypto from "crypto";
+import fs from "fs/promises";
 
-import cloudinary from 'cloudinary';
+import cloudinary from "cloudinary";
 
-import asyncHandler from '../middlewares/asyncHandler.middleware.js';
-import AppError from '../utils/AppError.js';
-import User from '../models/user.model.js';
-import sendEmail from '../utils/sendEmail.js';
+import asyncHandler from "../middlewares/asyncHandler.middleware.js";
+import AppError from "../utils/AppError.js";
+import User from "../models/user.model.js";
+import sendEmail from "../utils/sendEmail.js";
 
 const cookieOptions = {
-  secure: process.env.NODE_ENV === 'production' ? true : false,
+  secure: process.env.NODE_ENV === "production" ? true : false,
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
   httpOnly: true,
+  sameSite: "None",
 };
 
 /**
@@ -25,7 +26,7 @@ export const registerUser = asyncHandler(async (req, res, next) => {
 
   // Check if the data is there or not, if not throw error message
   if (!fullName || !email || !password) {
-    return next(new AppError('All fields are required', 400));
+    return next(new AppError("All fields are required", 400));
   }
 
   // Check if the user exists with the provided email
@@ -33,7 +34,7 @@ export const registerUser = asyncHandler(async (req, res, next) => {
 
   // If user exists send the reponse
   if (userExists) {
-    return next(new AppError('Email already exists', 409));
+    return next(new AppError("Email already exists", 409));
   }
 
   // Create new user with the given necessary data and save to DB
@@ -44,14 +45,14 @@ export const registerUser = asyncHandler(async (req, res, next) => {
     avatar: {
       public_id: email,
       secure_url:
-        'https://res.cloudinary.com/du9jzqlpt/image/upload/v1674647316/avatar_drzgxv.jpg',
+        "https://res.cloudinary.com/du9jzqlpt/image/upload/v1674647316/avatar_drzgxv.jpg",
     },
   });
 
   // If user not created send message response
   if (!user) {
     return next(
-      new AppError('User registration failed, please try again later', 400)
+      new AppError("User registration failed, please try again later", 400)
     );
   }
 
@@ -59,11 +60,11 @@ export const registerUser = asyncHandler(async (req, res, next) => {
   if (req.file) {
     try {
       const result = await cloudinary.v2.uploader.upload(req.file.path, {
-        folder: 'lms', // Save files in a folder named lms
+        folder: "lms", // Save files in a folder named lms
         width: 250,
         height: 250,
-        gravity: 'faces', // This option tells cloudinary to center the image around detected faces (if any) after cropping or resizing the original image
-        crop: 'fill',
+        gravity: "faces", // This option tells cloudinary to center the image around detected faces (if any) after cropping or resizing the original image
+        crop: "fill",
       });
 
       // If success
@@ -77,7 +78,7 @@ export const registerUser = asyncHandler(async (req, res, next) => {
       }
     } catch (error) {
       return next(
-        new AppError(error || 'File not uploaded, please try again', 400)
+        new AppError(error || "File not uploaded, please try again", 400)
       );
     }
   }
@@ -92,12 +93,12 @@ export const registerUser = asyncHandler(async (req, res, next) => {
   user.password = undefined;
 
   // Setting the token in the cookie with name token along with cookieOptions
-  res.cookie('token', token, cookieOptions);
+  res.cookie("token", token, cookieOptions);
 
   // If all good send the response to the frontend
   res.status(201).json({
     success: true,
-    message: 'User registered successfully',
+    message: "User registered successfully",
     user,
   });
 });
@@ -113,16 +114,16 @@ export const loginUser = asyncHandler(async (req, res, next) => {
 
   // Check if the data is there or not, if not throw error message
   if (!email || !password) {
-    return next(new AppError('Email and Password are required', 400));
+    return next(new AppError("Email and Password are required", 400));
   }
 
   // Finding the user with the sent email
-  const user = await User.findOne({ email }).select('+password');
+  const user = await User.findOne({ email }).select("+password");
 
   // If no user or sent password do not match then send generic response
   if (!(user && (await user.comparePassword(password)))) {
     return next(
-      new AppError('Email or Password do not match or user does not exist', 401)
+      new AppError("Email or Password do not match or user does not exist", 401)
     );
   }
 
@@ -133,12 +134,12 @@ export const loginUser = asyncHandler(async (req, res, next) => {
   user.password = undefined;
 
   // Setting the token in the cookie with name token along with cookieOptions
-  res.cookie('token', token, cookieOptions);
+  res.cookie("token", token, cookieOptions);
 
   // If all good send the response to the frontend
   res.status(200).json({
     success: true,
-    message: 'User logged in successfully',
+    message: "User logged in successfully",
     user,
   });
 });
@@ -150,8 +151,8 @@ export const loginUser = asyncHandler(async (req, res, next) => {
  */
 export const logoutUser = asyncHandler(async (_req, res, _next) => {
   // Setting the cookie value to null
-  res.cookie('token', null, {
-    secure: process.env.NODE_ENV === 'production' ? true : false,
+  res.cookie("token", null, {
+    secure: process.env.NODE_ENV === "production" ? true : false,
     maxAge: 0,
     httpOnly: true,
   });
@@ -159,7 +160,7 @@ export const logoutUser = asyncHandler(async (_req, res, _next) => {
   // Sending the response
   res.status(200).json({
     success: true,
-    message: 'User logged out successfully',
+    message: "User logged out successfully",
   });
 });
 
@@ -174,7 +175,7 @@ export const getLoggedInUserDetails = asyncHandler(async (req, res, _next) => {
 
   res.status(200).json({
     success: true,
-    message: 'User details',
+    message: "User details",
     user,
   });
 });
@@ -190,7 +191,7 @@ export const forgotPassword = asyncHandler(async (req, res, next) => {
 
   // If no email send email required message
   if (!email) {
-    return next(new AppError('Email is required', 400));
+    return next(new AppError("Email is required", 400));
   }
 
   // Finding the user via email
@@ -198,7 +199,7 @@ export const forgotPassword = asyncHandler(async (req, res, next) => {
 
   // If no email found send the message email not found
   if (!user) {
-    return next(new AppError('Email not registered', 400));
+    return next(new AppError("Email not registered", 400));
   }
 
   // Generating the reset token via the method we have in user model
@@ -219,7 +220,7 @@ export const forgotPassword = asyncHandler(async (req, res, next) => {
   const resetPasswordUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
   // We here need to send an email to the user with the token
-  const subject = 'Reset Password';
+  const subject = "Reset Password";
   const message = `You can reset your password by clicking <a href=${resetPasswordUrl} target="_blank">Reset your password</a>\nIf the above link does not work for some reason then copy paste this link in new tab ${resetPasswordUrl}.\n If you have not requested this, kindly ignore.`;
 
   try {
@@ -239,7 +240,7 @@ export const forgotPassword = asyncHandler(async (req, res, next) => {
 
     return next(
       new AppError(
-        error.message || 'Something went wrong, please try again.',
+        error.message || "Something went wrong, please try again.",
         500
       )
     );
@@ -260,13 +261,13 @@ export const resetPassword = asyncHandler(async (req, res, next) => {
 
   // We are again hashing the resetToken using sha256 since we have stored our resetToken in DB using the same algorithm
   const forgotPasswordToken = crypto
-    .createHash('sha256')
+    .createHash("sha256")
     .update(resetToken)
-    .digest('hex');
+    .digest("hex");
 
   // Check if password is not there then send response saying password is required
   if (!password) {
-    return next(new AppError('Password is required', 400));
+    return next(new AppError("Password is required", 400));
   }
 
   console.log(forgotPasswordToken);
@@ -280,7 +281,7 @@ export const resetPassword = asyncHandler(async (req, res, next) => {
   // If not found or expired send the response
   if (!user) {
     return next(
-      new AppError('Token is invalid or expired, please try again', 400)
+      new AppError("Token is invalid or expired, please try again", 400)
     );
   }
 
@@ -297,7 +298,7 @@ export const resetPassword = asyncHandler(async (req, res, next) => {
   // Sending the response when everything goes good
   res.status(200).json({
     success: true,
-    message: 'Password changed successfully',
+    message: "Password changed successfully",
   });
 });
 
@@ -314,16 +315,16 @@ export const changePassword = asyncHandler(async (req, res, next) => {
   // Check if the values are there or not
   if (!oldPassword || !newPassword) {
     return next(
-      new AppError('Old password and new password are required', 400)
+      new AppError("Old password and new password are required", 400)
     );
   }
 
   // Finding the user by ID and selecting the password
-  const user = await User.findById(id).select('+password');
+  const user = await User.findById(id).select("+password");
 
   // If no user then throw an error message
   if (!user) {
-    return next(new AppError('Invalid user id or user does not exist', 400));
+    return next(new AppError("Invalid user id or user does not exist", 400));
   }
 
   // Check if the old password is correct
@@ -331,7 +332,7 @@ export const changePassword = asyncHandler(async (req, res, next) => {
 
   // If the old password is not valid then throw an error message
   if (!isPasswordValid) {
-    return next(new AppError('Invalid old password', 400));
+    return next(new AppError("Invalid old password", 400));
   }
 
   // Setting the new password
@@ -345,7 +346,7 @@ export const changePassword = asyncHandler(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    message: 'Password changed successfully',
+    message: "Password changed successfully",
   });
 });
 
@@ -362,7 +363,7 @@ export const updateUser = asyncHandler(async (req, res, next) => {
   const user = await User.findById(id);
 
   if (!user) {
-    return next(new AppError('Invalid user id or user does not exist'));
+    return next(new AppError("Invalid user id or user does not exist"));
   }
 
   if (fullName) {
@@ -376,11 +377,11 @@ export const updateUser = asyncHandler(async (req, res, next) => {
 
     try {
       const result = await cloudinary.v2.uploader.upload(req.file.path, {
-        folder: 'lms', // Save files in a folder named lms
+        folder: "lms", // Save files in a folder named lms
         width: 250,
         height: 250,
-        gravity: 'faces', // This option tells cloudinary to center the image around detected faces (if any) after cropping or resizing the original image
-        crop: 'fill',
+        gravity: "faces", // This option tells cloudinary to center the image around detected faces (if any) after cropping or resizing the original image
+        crop: "fill",
       });
 
       // If success
@@ -394,7 +395,7 @@ export const updateUser = asyncHandler(async (req, res, next) => {
       }
     } catch (error) {
       return next(
-        new AppError(error || 'File not uploaded, please try again', 400)
+        new AppError(error || "File not uploaded, please try again", 400)
       );
     }
   }
@@ -404,6 +405,6 @@ export const updateUser = asyncHandler(async (req, res, next) => {
 
   res.status(200).json({
     success: true,
-    message: 'User details updated successfully',
+    message: "User details updated successfully",
   });
 });

@@ -97,6 +97,7 @@ export const verifySubscription = asyncHandler(async (req, res, next) => {
     secure: process.env.NODE_ENV === "production" ? true : false,
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     httpOnly: true,
+    sameSite: "None",
   };
   res.cookie("token", token, cookieOptions);
 
