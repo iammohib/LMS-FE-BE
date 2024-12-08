@@ -13,6 +13,7 @@ const app = express();
 // Get the current file path and directory (ESM doesn't support __dirname directly)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
 // Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -29,6 +30,15 @@ app.use(
 );
 app.use(morgan("dev"));
 app.use(cookieParser());
+
+// Middleware to set Content-Security-Policy
+app.use((req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; img-src 'self' data:; script-src 'self';"
+  );
+  next();
+});
 
 // Server Status Check Route
 app.get("/ping", (_req, res) => {
